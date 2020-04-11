@@ -4,47 +4,51 @@ import Aspen from "../src/index";
 import { updateStatement } from "typescript";
 import { ConnectionState } from "../src/types";
 
-const aspen = new Aspen({
+// const aspen = new Aspen({
+//   clientId: "my-second-aspen-spa",
+//   callbackURL: window.location.origin + "/aspen-auth-callback",
+// });
+
+const aspen = Aspen.createClient({
   clientId: "my-second-aspen-spa",
-  callbackURL: "http://127.0.0.1:1234/aspen-auth-callback",
+  callbackURL: window.location.origin + "/aspen-auth-callback",
 });
 
 console.log(aspen);
 
 function App() {
-  const [isLoggedIn, setLoggedIn] = useState(aspen.user.isLoggedIn);
+  const [isLoggedIn, setLoggedIn] = useState(aspen.isLoggedIn);
   const [messages, setMessages] = useState([]);
   const [recipient, setRecipient] = useState("");
   const [isRecipientLocked, setRecipientLocked] = useState(false);
   const [messageText, setMessageText] = useState("");
 
-  const addMessage = msg => {
-    setMessages(oldMessages => [...oldMessages, msg]);
+  const addMessage = (msg) => {
+    setMessages((oldMessages) => [...oldMessages, msg]);
   };
 
   useEffect(() => {
-    if (aspen.db) {
-      const changes = aspen.db
-        .changes({
-          since: "now",
-          live: true,
-          include_docs: true,
-        })
-        .on("change", function(change) {
-          console.log(change.doc);
-          addMessage(change.doc);
-        });
-
-      return changes.cancel;
-    }
+    // if (aspen.db) {
+    //   const changes = aspen.db
+    //     .changes({
+    //       since: "now",
+    //       live: true,
+    //       include_docs: true,
+    //     })
+    //     .on("change", function(change) {
+    //       console.log(change.doc);
+    //       addMessage(change.doc);
+    //     });
+    //   return changes.cancel;
+    // }
   }, [aspen.db]);
 
   useEffect(() => {
-    aspen.user.onAuthChange(state => {
-      if (state !== ConnectionState.CONNECTED) {
-        setLoggedIn(false);
-      }
-    });
+    // aspen.user.onAuthChange(state => {
+    //   if (state !== ConnectionState.CONNECTED) {
+    //     setLoggedIn(false);
+    //   }
+    // });
   }, []);
 
   function sendMessage() {
@@ -67,7 +71,7 @@ function App() {
     return (
       <button
         onClick={() => {
-          aspen.user.login();
+          aspen.login();
         }}
       >
         Login
@@ -79,7 +83,7 @@ function App() {
     <div>
       <button
         onClick={() => {
-          aspen.user.logout();
+          aspen.logout();
         }}
       >
         Logout
@@ -88,7 +92,7 @@ function App() {
         <input
           placeholder="Username"
           disabled={isRecipientLocked}
-          onChange={e => {
+          onChange={(e) => {
             setRecipient(e.target.value);
           }}
         />
@@ -102,14 +106,14 @@ function App() {
         {isRecipientLocked ? (
           <div>
             <div>
-              {messages.map(message => (
+              {messages.map((message) => (
                 <div>{`${message.from} : ${message.data.text}`}</div>
               ))}
             </div>
             <hr />
             <div>
               <input
-                onChange={e => {
+                onChange={(e) => {
                   setMessageText(e.target.value);
                 }}
                 value={messageText}

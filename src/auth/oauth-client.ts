@@ -3,9 +3,9 @@ import jwtDecode from "jwt-decode";
 import crypto from "crypto";
 
 export default class AuthClient {
-  private clientId: string;
-  private redirectUri: string;
-  private scope: string[];
+  readonly clientId: string;
+  readonly redirectUri: string;
+  readonly scope: string[];
   private authEndpoint: string;
 
   private authToken: AuthToken | null;
@@ -29,7 +29,7 @@ export default class AuthClient {
   }
 
   private initAuthToken(): AuthToken | null {
-    const tokenString = window.localStorage.getItem("authToken");
+    const tokenString = localStorage.getItem("authToken");
     return tokenString && JSON.parse(tokenString);
   }
 
@@ -41,13 +41,13 @@ export default class AuthClient {
       throw new Error("Endpoint did not return code.");
     }
     const state = params.get("state");
-    const savedState = window.localStorage.getItem("state");
-    window.localStorage.removeItem("state");
+    const savedState = localStorage.getItem("state");
+    localStorage.removeItem("state");
     if (state !== savedState) {
       throw new Error("Server returned state different than state provided.");
     }
     const token = await this.getTokenWithCode(code);
-    window.localStorage.setItem("authToken", JSON.stringify(token));
+    localStorage.setItem("authToken", JSON.stringify(token));
     this.authToken = token;
   }
 
@@ -91,7 +91,7 @@ export default class AuthClient {
   }
 
   unauthenticate() {
-    window.localStorage.removeItem("authToken");
+    localStorage.removeItem("authToken");
     this.authToken = null;
   }
 

@@ -11,55 +11,6 @@
   <body>
     <h1>An awesome app powered by Aspen</h1>
     <div id="app"></div>
-    <!-- <div
-      x-data="{ loggedIn: false }"
-      x-init="loggedIn = aspen.user.isLoggedIn()"
-    >
-      <button x-show="!loggedIn" x-on:click="aspen.user.login()">
-        Sign in
-      </button>
-      <button x-show="loggedIn" @click="aspen.user.logout">Sign out</button>
-
-      <div x-show="loggedIn" x-data="{messages: []}" @new-message="messages.push($event)">
-        <h3>Messages</h3>
-        <div >
-          <button @click="$dispatch('new-message', {test: 123})">
-            dispatch
-          </button>
-        </div>
-      </div> -->
-    </div>
-
-    <script>
-      //   document.getElementById("login").onclick = () => {
-      //     if (aspen.user.isLoggedIn()) {
-      //       return aspen.user.logout();
-      //     }
-      //     return aspen.user.login();
-      //   };
-      //   document.getElementById("test").onclick = () => {
-      //     aspen.testCall().then(console.log);
-      //   };
-      //   if (aspen.user.isLoggedIn()) {
-      //     document.getElementById("login").innerText = "Logout";
-      //   }
-      //   console.log(aspen, aspen.db);
-    //   if (aspen.db) {
-    //     const changes = aspen.db
-    //       .changes({
-    //         since: "now",
-    //         live: true,
-    //         include_docs: true,
-    //       })
-    //       .on("change", function(change) {
-    //         console.log(change.doc);
-    //         dispatchEvent(new Event("newMessage", change.doc));
-    //         //   const child = document.createElement("div");
-    //         //   child.innerText = change.doc.data.msg;
-    //         //   document.getElementById("msgBox").appendChild(child);
-    //       });
-    //   }
-    </script>
     <script src="./index.jsx"></script>
   </body>
 </html>
