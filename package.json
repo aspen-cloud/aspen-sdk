@@ -1,7 +1,7 @@
 {
   "name": "@aspen.cloud/aspen-sdk",
   "version": "0.0.1",
-  "main": "lib/aspen.js",
+  "main": "lib/index.js",
   "author": "Matthew Linkous <matthew.linkous@gmail.com>",
   "license": "Apache-2.0",
   "private": false,
