@@ -1,8 +1,6 @@
 import React, { useEffect, useState } from "react";
 import ReactDOM from "react-dom";
-import Aspen from "../src/index";
-import { updateStatement } from "typescript";
-import { ConnectionState } from "../src/types";
+import Aspen from "../lib/index";
 
 // const aspen = new Aspen({
 //   clientId: "my-second-aspen-spa",
