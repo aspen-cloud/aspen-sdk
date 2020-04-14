@@ -1,0 +1,19 @@
+.App {
+  margin: 16px auto;
+  max-width: 600px;
+  padding: 16px;
+}
+
+.todo {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px;
+  margin: 8px;
+  border-radius: 8px;
+  border: 1px solid lightslategray;
+}
+
+.finished {
+  opacity: 0.3;
+}

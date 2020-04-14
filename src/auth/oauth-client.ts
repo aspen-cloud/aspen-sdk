@@ -1,6 +1,6 @@
 import { AuthToken, IdentityToken, ErrorResp } from "./types/oauth-client";
 import jwtDecode from "jwt-decode";
-import crypto from "crypto";
+import shajs from "sha.js";
 
 export default class AuthClient {
   readonly clientId: string;
@@ -70,7 +70,7 @@ export default class AuthClient {
         "Content-Type": "application/x-www-form-urlencoded",
       },
       body: Object.entries(data)
-        .map(pair => pair.join("="))
+        .map((pair) => pair.join("="))
         .join("&"),
     });
     const token = (await resp.json()) as AuthToken | ErrorResp;
@@ -127,10 +127,7 @@ export default class AuthClient {
     authURL.searchParams.append("client_id", this.clientId);
     authURL.searchParams.append("redirect_uri", this.redirectUri);
     authURL.searchParams.append("state", state);
-    authURL.searchParams.append(
-      "scope",
-      encodeURIComponent(this.scope.join(" ")),
-    );
+    authURL.searchParams.append("scope", this.scope.join(" "));
     authURL.searchParams.append("code_challenge", codeChallenge);
     authURL.searchParams.append("code_challenge_method", "S256");
 
@@ -147,14 +144,15 @@ function base64URLEncode(str: Buffer) {
 }
 
 function sha256(buffer: Buffer) {
-  return crypto
-    .createHash("sha256")
-    .update(buffer)
-    .digest();
+  return shajs("sha256").update(buffer).digest();
 }
 
 function createCodeVerifier(): string {
-  return base64URLEncode(crypto.randomBytes(32));
+  return base64URLEncode(
+    Buffer.from(
+      btoa(window.crypto.getRandomValues(new Uint32Array(4)).toString()),
+    ),
+  );
 }
 
 function createCodeChallenge(str: string): string {

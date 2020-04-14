@@ -11,7 +11,7 @@ interface Aspen {
 function createClient(config: AspenConfig) {
   const authClient = new AuthClient({
     clientId: config.clientId,
-    scope: ["openid"],
+    scope: ["openid", "storage"],
     redirectUri: config.callbackURL,
     authEndpoint: AUTH_URL,
   });

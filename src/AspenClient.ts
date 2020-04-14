@@ -18,6 +18,9 @@ export abstract class BaseClient {
   }
 }
 
+/**
+ * The primary Aspen Client that's usable after the user has authenticated.
+ */
 export class AspenClient extends BaseClient {
   private authCallback?: (state: ConnectionState) => any;
   private db: PouchDB.Database;
@@ -50,15 +53,28 @@ export class AspenClient extends BaseClient {
       this.authCallback(newState);
     }
   }
+  /**
+   * Navigates user to Aspen's login/regisration and returns to your app after succesful authentication.
+   * @param cred A optional credential (e.g. username, email) to start the auth flow.
+   */
   login(cred?: UserCredential) {
     if (!cred) {
       window.location.href = this.authClient.getAuthURL();
     }
   }
+
+  /**
+   * Unathenticates the currently signed-in user.
+   * @param cred A optional credential (e.g. username, email) to start the auth flow.
+   */
   logout() {
     this.authClient.unauthenticate();
     this.userState = ConnectionState.DISCONNECTED;
   }
+
+  /**
+   * Gets currently authenticated user's profile if permitted.
+   */
   async getUserProfile() {
     const resp = await this.authClient.fetch(
       // @ts-ignore
@@ -78,12 +94,28 @@ export class AspenClient extends BaseClient {
   //   onAuthChange(callback: (state: ConnectionState) => any) {
   //     this.authCallback = callback;
   //   }
+
+  /**
+   * Returns a collection instance scoped to the provided name to store and retrieve documents.
+   * @param name The name of the collection
+   */
   collection(name: string) {
     return new Collection(this.db, name);
   }
+
+  /**
+   * Subscribes to the user's application inbox
+   * @param callback
+   */
   onNewMessages(callback: (newDoc: object) => void) {
     this.inbox.subscribe(callback);
   }
+
+  /**
+   * Sends a doc to users contact by username. The doc will be stored in the recipient's database and optionally notify the recipient.
+   * @param doc
+   * @param username
+   */
   async sendDocTo(doc: any, username: string) {
     this.outbox.add({
       to: username,
@@ -99,6 +131,10 @@ export class AspenClient extends BaseClient {
   }
 }
 
+/**
+ * The Aspen client that's accessible before the user is signed in and authenticated.
+ * It provides basic functionally to retrieve information about the app and log the user in.
+ */
 export class PreAuthAspenClient extends BaseClient {
   constructor(authClient: AuthClient) {
     super(authClient);
