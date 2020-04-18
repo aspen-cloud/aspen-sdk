@@ -21,7 +21,7 @@ export default {
     dir: "lib",
     format: "umd",
     name: "aspen",
-    sourcemap: true,
+    sourcemap: false,
   },
   plugins: [
     replace({

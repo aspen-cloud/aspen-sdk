@@ -9,6 +9,8 @@ const aspen = Aspen.createClient({
   callbackURL: window.location.origin + "/aspen-auth-callback",
 });
 
+console.log(aspen);
+
 function App() {
   const [todos, setTodos] = useState([]);
   const [newNote, setNewNote] = useState("");
@@ -18,27 +20,32 @@ function App() {
       return;
     }
     aspen
+      .currentUser()
       .collection("todos")
       .getAll()
-      .then((docs) => setTodos(docs.map((doc) => doc.doc)));
+      .then(({ rows: docs }) => setTodos(docs.map((doc) => doc.doc)))
+      .catch((e) => console.error(e));
 
-    aspen.collection("todos").subscribe((changes) => {
-      const newDoc = changes.doc;
-      //newDoc._id = "/" + newDoc._id.split("/").slice(2).join("/");
-      setTodos((oldTodos) => {
-        console.log(oldTodos, newDoc);
-        const matchingIndex = oldTodos
-          .map(({ _id }) => _id)
-          .indexOf(newDoc._id);
-        if (matchingIndex > -1) {
-          const copy = [...oldTodos];
-          copy[matchingIndex] = newDoc;
-          return copy;
-        } else {
-          return [newDoc, ...oldTodos];
-        }
+    aspen
+      .currentUser()
+      .collection("todos")
+      .subscribe((changes) => {
+        const newDoc = changes.doc;
+        //newDoc._id = "/" + newDoc._id.split("/").slice(2).join("/");
+        setTodos((oldTodos) => {
+          console.log(oldTodos, newDoc);
+          const matchingIndex = oldTodos
+            .map(({ _id }) => _id)
+            .indexOf(newDoc._id);
+          if (matchingIndex > -1) {
+            const copy = [...oldTodos];
+            copy[matchingIndex] = newDoc;
+            return copy;
+          } else {
+            return [newDoc, ...oldTodos];
+          }
+        });
       });
-    });
   }, []);
 
   if (!aspen.isLoggedIn()) {
@@ -54,7 +61,10 @@ function App() {
         onSubmit={(e) => {
           e.preventDefault();
           console.log(newNote);
-          aspen.collection("todos").add({ note: newNote, isDone: false });
+          aspen
+            .currentUser()
+            .collection("todos")
+            .add({ note: newNote, isDone: false });
           setNewNote("");
         }}
       >
@@ -75,8 +85,9 @@ function App() {
             isDone={todo.isDone}
             onToggle={() => {
               aspen
+                .currentUser()
                 .collection("todos")
-                .update(todo._id.split("/")[2], (oldDoc) => {
+                .update(todo._id, (oldDoc) => {
                   return { ...oldDoc, isDone: !oldDoc.isDone };
                 });
             }}
@@ -93,8 +104,9 @@ function App() {
               isDone={todo.isDone}
               onToggle={() => {
                 aspen
+                  .currentUser()
                   .collection("todos")
-                  .update(todo._id.split("/")[2], (oldDoc) => {
+                  .update(todo._id, (oldDoc) => {
                     return { ...oldDoc, isDone: !oldDoc.isDone };
                   });
               }}

@@ -25,8 +25,16 @@ export abstract class BaseClient {
  */
 export class AspenClient extends BaseClient {
   private authCallback?: (state: ConnectionState) => any;
+  private authUser?: AuthUserContext;
   constructor(authClient: AuthClient) {
     super(authClient);
+    if (
+      window.location.pathname == new URL(this.authClient.redirectUri).pathname
+    ) {
+      this.authClient.handleAuthRedirect(window.location).then(() => {
+        window.location.assign("/");
+      });
+    }
   }
   private set userState(newState: ConnectionState) {
     if (this.authCallback) {
@@ -107,6 +115,13 @@ export class AspenClient extends BaseClient {
     if (!this.isLoggedIn()) {
       throw new Error("No user is currently logged in.");
     }
+    if (!this.authUser) {
+      this.authUser = this.initAuthUser();
+    }
+    return this.authUser;
+  }
+
+  private initAuthUser() {
     const accessToken = this.authClient.accessToken;
     const appId = this.authClient.clientId;
     const userId = this.authClient.identityToken!.sub;
@@ -131,7 +146,7 @@ export class AspenClient extends BaseClient {
         `${API_URL}/inbox/${to}/${this.authClient.clientId}/`,
         "POST",
         {
-          body,
+          body: JSON.stringify(body),
         },
       );
     };

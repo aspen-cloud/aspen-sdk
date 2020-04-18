@@ -7,9 +7,12 @@ const pouchAllDocs = PouchDB.prototype.allDocs;
 // @ts-ignore
 PouchDB.plugin({
   allDocs: function ({ include_docs, key }) {
-    const startkey = `/${key}/`;
-    const endkey = startkey + "\ufff0";
-    return pouchAllDocs.call(this, { include_docs, startkey, endkey });
+    if (key) {
+      const startkey = `/${key}/`;
+      const endkey = startkey + "\ufff0";
+      return pouchAllDocs.call(this, { include_docs, startkey, endkey });
+    }
+    return pouchAllDocs.call(this, ...arguments);
   },
 });
 
@@ -30,7 +33,7 @@ const collectionFilter = {
   },
 };
 
-describe.only("Can manipulate collections for authenticated user", () => {
+describe("Can manipulate collections for authenticated user", () => {
   const firstCollectionName = "test1";
   const secondCollectionName = "test2";
   const testId = "testId";
@@ -146,8 +149,8 @@ describe.only("Can manipulate collections for authenticated user", () => {
   test("You can send a document to another user via outbox", async () => {
     const doc = { test: "data" };
     await authUser.sendDocTo(doc, "anotherUser");
-
-    expect(mockMessageSender).toHaveBeenCalled();
+    const sentMessages = await authUser.getSentMessages();
+    expect(sentMessages.rows).toHaveLength(1);
   });
 
   test("Can subscribe to collections", async () => {

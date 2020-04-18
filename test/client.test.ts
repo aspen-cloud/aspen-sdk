@@ -10,6 +10,7 @@ let aspen: AspenClient;
 
 describe("Database works for existing user", () => {
   beforeAll(() => {
+    // @ts-ignore
     aspen = new AspenClient(new AuthClient());
   });
 
@@ -33,13 +34,10 @@ describe("Database works for existing user", () => {
 
 describe("Database works for anonymous user", () => {
   beforeAll(() => {
-    // jest.mock("../src/auth/oauth-client", () => {
-    //   isAuthenticated: () => false;
-    // });
-
     // @ts-ignore
     AuthClient.mockImplementation(() => ({
       isAuthenticated: () => false,
+      redirectUri: "http://localhost:1234/callback",
     }));
     // @ts-ignore
     aspen = new AspenClient(new AuthClient());
@@ -51,7 +49,7 @@ describe("Database works for anonymous user", () => {
     }).toThrowError();
   });
 
-  test("You can request data from other users databases", async () => {
+  test.skip("You can request data from other users databases", async () => {
     const resp = await aspen.user("someOtherUser").collection("test").getAll();
     console.log(resp);
   });

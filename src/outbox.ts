@@ -16,8 +16,8 @@ export default class Outbox {
   private handler: MessageSender;
   constructor({ db, messageSender }) {
     this.db = db;
+    this.handler = messageSender;
     this.handleSentMessages();
-    this.handler = messageSender();
   }
   post(to: string, body: any) {
     return this.db.post({
@@ -41,6 +41,7 @@ export default class Outbox {
     changes.on("change", async (change) => {
       if (change.deleted) return;
       const { changes, doc } = change;
+
       if (doc.status !== MessageStatus.SENT) {
         return; //TODO add retry logic for rejected messages
       }

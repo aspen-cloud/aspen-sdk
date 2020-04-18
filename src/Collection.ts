@@ -12,19 +12,18 @@ export class Collection {
     this.collectionName = collectionName;
   }
 
-  async update(
+  async update<Content>(
     id: string,
-    updateFunc: (
-      prevDoc: Partial<PouchDB.Core.IdMeta>,
-    ) => Partial<PouchDB.Core.IdMeta> | false,
+    updateFunc: PouchDB.UpsertDiffCallback<
+      Partial<PouchDB.Core.Document<{} & Content>>
+    >,
   ) {
-    const resp = await this.db.upsert(
-      createFullId(this.collectionName, id),
-      (prevDoc) => {
-        const updateResult = updateFunc(prevDoc);
-        return updateResult;
-      },
-    );
+    const resp = await this.db.upsert<
+      Partial<PouchDB.Core.Document<{} & Content>>
+    >(createFullId(this.collectionName, id), (prevDoc) => {
+      const updateResult = updateFunc(prevDoc);
+      return updateResult;
+    });
     const { id: newId, collection } = parseFullId(resp.id);
     return { ...resp, id: newId, col: collection };
   }
@@ -139,7 +138,7 @@ export class Collection {
   }
 
   share(docId: string, sharedTo: string[] | "public") {
-    this.db.upsert<{ shared?: string }>(docId, (doc) => {
+    return this.update<{ shared?: string[] | "public" }>(docId, (doc) => {
       if (doc.shared && Array.isArray(doc.shared) && Array.isArray(sharedTo)) {
         return { ...doc, sharing: [...doc.shared, ...sharedTo] };
       }
