@@ -7,7 +7,7 @@ const mockRedirectHandler = jest.fn(() => new Promise((resolve) => resolve()));
 
 jest.mock("../src/auth/oauth-client");
 
-describe("createClient provides the appropriate client", () => {
+describe.skip("createClient provides the appropriate client", () => {
   beforeAll(() => {
     // @ts-ignore
     AuthClient.mockImplementationOnce(() => {
@@ -27,7 +27,7 @@ describe("createClient provides the appropriate client", () => {
     });
   });
 
-  test("Aspen provides pre-auth client when not authenticated", () => {
+  test.skip("Aspen provides pre-auth client when not authenticated", () => {
     const aspenClient = Aspen.createClient({
       clientId: "test-client",
       callbackURL: "http://localhost:1234",
@@ -37,7 +37,7 @@ describe("createClient provides the appropriate client", () => {
     expect(aspenClient.isLoggedIn()).toBe(false);
   });
 
-  test("Aspen provides post-auth client when authenticated", () => {
+  test.skip("Aspen provides post-auth client when authenticated", () => {
     const mockToken = {
       access_token: "test-token",
     };

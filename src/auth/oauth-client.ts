@@ -33,6 +33,10 @@ export default class AuthClient {
     return tokenString && JSON.parse(tokenString);
   }
 
+  isAuthenticated() {
+    return !!this.accessToken;
+  }
+
   async handleAuthRedirect(location: Location) {
     // TODO compare redirect URI and provided url
     const params = new window.URLSearchParams(location.search);

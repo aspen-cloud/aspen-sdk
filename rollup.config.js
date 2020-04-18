@@ -1,4 +1,4 @@
-import typescript from "rollup-plugin-typescript";
+import typescript from "@rollup/plugin-typescript";
 import resolve from "@rollup/plugin-node-resolve";
 import commonjs from "@rollup/plugin-commonjs";
 import { terser } from "rollup-plugin-terser";
@@ -21,6 +21,7 @@ export default {
     dir: "lib",
     format: "umd",
     name: "aspen",
+    sourcemap: true,
   },
   plugins: [
     replace({
@@ -31,7 +32,7 @@ export default {
     builtins(),
     commonjs(),
     resolve({ browser: true }),
-    typescript(),
+    typescript({ module: "ES2015", outDir: "lib" }),
     terser(),
   ],
 };

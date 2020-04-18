@@ -15,12 +15,14 @@ function createClient(config: AspenConfig) {
     redirectUri: config.callbackURL,
     authEndpoint: AUTH_URL,
   });
-  // TODO add isAuthenticated method to authClient
-  if (authClient.accessToken) {
-    return new AspenClient(authClient);
-  } else {
-    return new PreAuthAspenClient(authClient);
-  }
+
+  return new AspenClient(authClient);
+
+  // if (authClient.accessToken) {
+  //   return new AspenClient(authClient);
+  // } else {
+  //   return new PreAuthAspenClient(authClient);
+  // }
 }
 
 export default { createClient };

@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-const docuri = require("docuri");
+import { createFullId, parseFullId, updateDocForClient } from "./utils";
 
 /**
  * All data is stored in a named collection and collections are the context in which data can be created, fetched, and manipulated.
@@ -11,17 +11,24 @@ export class Collection {
     this.db = db;
     this.collectionName = collectionName;
   }
-  update(
+
+  async update(
     id: string,
     updateFunc: (
       prevDoc: Partial<PouchDB.Core.IdMeta>,
     ) => Partial<PouchDB.Core.IdMeta> | false,
-  ): void {
-    this.db.upsert(createFullId(this.collectionName, id), (prevDoc) => {
-      const updateResult = updateFunc(prevDoc);
-      return updateResult;
-    });
+  ) {
+    const resp = await this.db.upsert(
+      createFullId(this.collectionName, id),
+      (prevDoc) => {
+        const updateResult = updateFunc(prevDoc);
+        return updateResult;
+      },
+    );
+    const { id: newId, collection } = parseFullId(resp.id);
+    return { ...resp, id: newId, col: collection };
   }
+
   private addFullId(doc: { _id: string }) {
     const fullID = createFullId(this.collectionName, doc._id);
     return { ...doc, _id: fullID };
@@ -36,7 +43,9 @@ export class Collection {
   async put(doc: object, id: string) {
     if (id === "") throw new Error("Doc ID cannot be an empty string.");
     // const _id = id && { _id: id }; // Simple trick that prevents overwriting _id when id is undefined
-    return this.db.put(this.addFullId({ ...doc, _id: id }));
+    const resp = await this.db.put(this.addFullId({ ...doc, _id: id }));
+    const { id: newId, collection } = parseFullId(resp.id);
+    return { ...resp, id: newId, collection };
   }
 
   /**
@@ -44,7 +53,9 @@ export class Collection {
    * @param doc
    */
   async putIfNotExists(doc: { _id: string }) {
-    return this.db.putIfNotExists(this.addFullId({ ...doc }));
+    const resp = await this.db.putIfNotExists(this.addFullId({ ...doc }));
+    const { id, collection } = parseFullId(resp.id);
+    return { ...resp, id, col: collection };
   }
 
   /**
@@ -53,14 +64,32 @@ export class Collection {
    */
   async add(doc: object) {
     const _id = nanoid();
-    this.db.post(this.addFullId({ ...doc, _id }));
+    const { ok, id, rev } = await this.db.post(this.addFullId({ _id, ...doc }));
+    const parts = parseFullId(id);
+    return { ok, id: parts.id, col: parts.collection, rev };
   }
+
+  async addAll(docs: object[]) {
+    const docsWithIds = docs.map((doc) => {
+      const _id = nanoid();
+      return this.addFullId({ _id, ...doc });
+    });
+
+    const bulkResp = await this.db.bulkDocs(docsWithIds);
+    return bulkResp.map((resp) => {
+      const { id, rev } = resp;
+      const parts = parseFullId(id);
+      return { id: parts.id, col: parts.collection, rev };
+    });
+  }
+
   /**
    * Get a document by a specific id in the collection
    * @param id
    */
   async get(id: string) {
-    return this.db.get(createFullId(this.collectionName, id));
+    const doc = await this.db.get(createFullId(this.collectionName, id));
+    return updateDocForClient(doc);
   }
 
   /**
@@ -68,7 +97,18 @@ export class Collection {
    * @param full Whether or not to include the entire documents or just metadata like _id
    */
   async getAll(full: boolean = true) {
-    return this.db.allDocs({ key: this.collectionName, include_docs: full });
+    const resp = await this.db.allDocs({
+      key: this.collectionName,
+      include_docs: full,
+    });
+    return {
+      ...resp,
+      rows: resp.rows.map((row) => {
+        const doc = row.doc && updateDocForClient(row.doc);
+        const { id } = parseFullId(row.id);
+        return { ...row, doc, id };
+      }),
+    };
   }
 
   /**
@@ -87,12 +127,25 @@ export class Collection {
         query_params: { collection: this.collectionName },
       })
       .on("change", function (change) {
-        callback(change);
+        const { id, collection } = parseFullId(change.id);
+        const changeForClient = {
+          ...change,
+          id,
+          col: collection,
+          doc: updateDocForClient(change.doc),
+        };
+        callback(changeForClient);
       });
+  }
+
+  share(docId: string, sharedTo: string[] | "public") {
+    this.db.upsert<{ shared?: string }>(docId, (doc) => {
+      if (doc.shared && Array.isArray(doc.shared) && Array.isArray(sharedTo)) {
+        return { ...doc, sharing: [...doc.shared, ...sharedTo] };
+      }
+      return { ...doc, sharing: sharedTo };
+    });
   }
 }
 
-const idMaker = docuri.route("/:collection/:id");
-function createFullId(collection: string, id: string): string {
-  return idMaker({ collection, id });
-}
+export class ExternalCollection {}

@@ -1,12 +1,14 @@
 import { UserCredential, ConnectionState } from "./types/index";
 import AuthClient from "./auth/oauth-client";
 import PouchDB from "pouchdb";
+const docuri = require("docuri");
 
 PouchDB.plugin(require("pouchdb-upsert"));
 PouchDB.plugin(require("pouchdb-adapter-http"));
 
 import { API_URL } from "./config";
 import { Collection } from "./Collection";
+import Outbox from "./outbox";
 
 export abstract class BaseClient {
   abstract isLoggedIn(): boolean;
@@ -23,30 +25,8 @@ export abstract class BaseClient {
  */
 export class AspenClient extends BaseClient {
   private authCallback?: (state: ConnectionState) => any;
-  private db: PouchDB.Database;
-  private inbox: Collection;
-  private outbox: Collection;
   constructor(authClient: AuthClient) {
     super(authClient);
-    const accessToken = this.authClient.accessToken;
-    const appId = this.authClient.clientId;
-    const userId = this.authClient.identityToken!.sub;
-    this.db = new PouchDB(`${API_URL}/${userId}/${appId}`, {
-      fetch: (url: string | Request, opts?: RequestInit) => {
-        // @ts-ignore
-        if (opts) {
-          opts.credentials = "omit";
-          if (!opts.headers) {
-            opts.headers = {} as Record<string, string>;
-          }
-          // @ts-ignore
-          opts.headers.set("Authorization", `Bearer ${accessToken}`);
-        }
-        return PouchDB.fetch(url, opts);
-      },
-    });
-    this.inbox = this.collection("_inbox");
-    this.outbox = this.collection("_outbox");
   }
   private set userState(newState: ConnectionState) {
     if (this.authCallback) {
@@ -86,14 +66,117 @@ export class AspenClient extends BaseClient {
     return user;
   }
   isSignedIn() {
-    return true;
+    return this.authClient.isAuthenticated();
   }
   isLoggedIn() {
-    return true;
+    return this.isSignedIn();
   }
   //   onAuthChange(callback: (state: ConnectionState) => any) {
   //     this.authCallback = callback;
   //   }
+
+  user(username: string) {
+    const appId = this.authClient.clientId;
+
+    const pouchOptions = this.isLoggedIn()
+      ? {
+          fetch: (url: string | Request, opts?: RequestInit) => {
+            // @ts-ignore
+            if (opts) {
+              opts.credentials = "omit";
+              if (!opts.headers) {
+                opts.headers = {} as Record<string, string>;
+              }
+              // @ts-ignore
+              opts.headers.set(
+                "Authorization",
+                `Bearer ${this.authClient.accessToken}`,
+              );
+            }
+            return PouchDB.fetch(url, opts);
+          },
+        }
+      : undefined;
+
+    const db = new PouchDB(`${API_URL}/${username}/${appId}`, pouchOptions);
+
+    return new ExternalUserContext({ db });
+  }
+
+  currentUser() {
+    if (!this.isLoggedIn()) {
+      throw new Error("No user is currently logged in.");
+    }
+    const accessToken = this.authClient.accessToken;
+    const appId = this.authClient.clientId;
+    const userId = this.authClient.identityToken!.sub;
+
+    const db = new PouchDB(`${API_URL}/${userId}/${appId}`, {
+      fetch: (url: string | Request, opts?: RequestInit) => {
+        // @ts-ignore
+        if (opts) {
+          opts.credentials = "omit";
+          if (!opts.headers) {
+            opts.headers = {} as Record<string, string>;
+          }
+          // @ts-ignore
+          opts.headers.set("Authorization", `Bearer ${accessToken}`);
+        }
+        return PouchDB.fetch(url, opts);
+      },
+    });
+
+    const sendMessage = ({ to, body }) => {
+      return this.authClient.fetch(
+        `${API_URL}/inbox/${to}/${this.authClient.clientId}/`,
+        "POST",
+        {
+          body,
+        },
+      );
+    };
+
+    const outbox = new Outbox({
+      db: new PouchDB("outbox"),
+      messageSender: sendMessage,
+    });
+
+    return new AuthUserContext({ db, outbox });
+  }
+}
+
+export class ExternalUserContext {
+  private db: PouchDB.Database;
+  constructor({ db }) {
+    this.db = db;
+  }
+
+  collection(collectionName: string) {
+    const idMaker = docuri.route("/:collection/:id");
+    function createFullId(collection: string, id: string): string {
+      return idMaker({ collection, id });
+    }
+
+    return {
+      get: async (id: string) => {
+        return this.db.get(createFullId(collectionName, id));
+      },
+      getAll: async (full: boolean = true) => {
+        return this.db.allDocs({ key: collectionName, include_docs: full });
+      },
+    };
+  }
+}
+
+export class AuthUserContext {
+  private db: PouchDB.Database;
+  private inbox: Collection;
+  private outbox: Outbox;
+  constructor({ db, outbox }) {
+    this.db = db;
+    this.inbox = this.collection("_inbox");
+    this.outbox = outbox;
+  }
 
   /**
    * Returns a collection instance scoped to the provided name to store and retrieve documents.
@@ -101,6 +184,10 @@ export class AspenClient extends BaseClient {
    */
   collection(name: string) {
     return new Collection(this.db, name);
+  }
+
+  getSentMessages(status?: string) {
+    return this.outbox.getAll();
   }
 
   /**
@@ -117,17 +204,7 @@ export class AspenClient extends BaseClient {
    * @param username
    */
   async sendDocTo(doc: any, username: string) {
-    this.outbox.add({
-      to: username,
-      body: doc,
-    });
-    // return this.authClient.fetch(
-    //   `${API_URL}/inbox/${username}/${this.authClient.clientId}/`,
-    //   "POST",
-    //   {
-    //     body: JSON.stringify(doc),
-    //   },
-    // );
+    return this.outbox.post(username, doc);
   }
 }
 
