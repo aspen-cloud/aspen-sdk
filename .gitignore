@@ -2,5 +2,5 @@ node_modules/
 .cache
 yarn-error.log
 build
-dist
-lib
+/dist/
+/lib/
