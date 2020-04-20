@@ -31,7 +31,7 @@
   ],
   "scripts": {
     "test": "jest",
-    "build": "rollup -c",
+    "build": "NODE_ENV=production rollup -c",
     "preversion": "npm run test",
     "prepack": "npm run test && npm run build",
     "doc": "typedoc --options typedoc.json"
