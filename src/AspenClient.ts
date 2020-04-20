@@ -178,9 +178,9 @@ export class ExternalUserContext {
     const { get, getAll, subscribe } = new Collection(this.db, collectionName);
 
     return {
-      get,
-      getAll,
-      subscribe,
+      get: get.bind(this),
+      getAll: getAll.bind(this),
+      subscribe: subscribe.bind(this),
     };
   }
 }
