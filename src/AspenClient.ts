@@ -104,7 +104,15 @@ export class AspenClient extends BaseClient {
             return PouchDB.fetch(url, opts);
           },
         }
-      : undefined;
+      : {
+          fetch: (url: string | Request, opts?: RequestInit) => {
+            // @ts-ignore
+            if (opts) {
+              opts.credentials = "omit";
+            }
+            return PouchDB.fetch(url, opts);
+          },
+        };
 
     const db = new PouchDB(`${API_URL}/${username}/${appId}`, pouchOptions);
 
