@@ -175,18 +175,12 @@ export class ExternalUserContext {
   }
 
   collection(collectionName: string) {
-    const idMaker = docuri.route("/:collection/:id");
-    function createFullId(collection: string, id: string): string {
-      return idMaker({ collection, id });
-    }
+    const { get, getAll, subscribe } = new Collection(this.db, collectionName);
 
     return {
-      get: async (id: string) => {
-        return this.db.get(createFullId(collectionName, id));
-      },
-      getAll: async (full: boolean = true) => {
-        return this.db.allDocs({ key: collectionName, include_docs: full });
-      },
+      get,
+      getAll,
+      subscribe,
     };
   }
 }
