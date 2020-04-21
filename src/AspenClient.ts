@@ -41,6 +41,7 @@ export class AspenClient extends BaseClient {
       this.authCallback(newState);
     }
   }
+
   /**
    * Navigates user to Aspen's login/regisration and returns to your app after succesful authentication.
    * @param cred A optional credential (e.g. username, email) to start the auth flow.
@@ -63,16 +64,17 @@ export class AspenClient extends BaseClient {
   /**
    * Gets currently authenticated user's profile if permitted.
    */
-  async getUserProfile() {
+  async getUserProfile(username: string) {
     const resp = await this.authClient.fetch(
       // @ts-ignore
       //"http://localhost:3000/api/" + this.authClient.identityToken.sub,
       // @ts-ignore
-      Aspen.API_URL + "/" + this.authClient.identityToken.sub,
+      API_URL + "/" + username,
     );
     const user = resp.json();
     return user;
   }
+
   isSignedIn() {
     return this.authClient.isAuthenticated();
   }
@@ -164,7 +166,14 @@ export class AspenClient extends BaseClient {
       messageSender: sendMessage,
     });
 
-    return new AuthUserContext({ db, outbox });
+    return new AuthUserContext({
+      db,
+      outbox,
+      getInfo: this.getUserProfile.bind(
+        this,
+        this.authClient.identityToken.sub,
+      ),
+    });
   }
 }
 
@@ -189,10 +198,12 @@ export class AuthUserContext {
   private db: PouchDB.Database;
   private inbox: Collection;
   private outbox: Outbox;
-  constructor({ db, outbox }) {
+  getInfo: () => Promise<any>;
+  constructor({ db, outbox, getInfo }) {
     this.db = db;
     this.inbox = this.collection("_inbox");
     this.outbox = outbox;
+    this.getInfo = getInfo;
   }
 
   /**
