@@ -222,8 +222,8 @@ export class AuthUserContext {
    * Subscribes to the user's application inbox
    * @param callback
    */
-  onNewMessages(callback: (newDoc: object) => void) {
-    this.inbox.subscribe(callback);
+  onNewMessages(callback: (newDoc: any) => void) {
+    return this.inbox.subscribe(({ doc }) => callback(doc));
   }
 
   /**

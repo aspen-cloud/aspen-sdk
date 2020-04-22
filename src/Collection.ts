@@ -117,7 +117,7 @@ export class Collection {
   subscribe(
     callback: (newDoc: PouchDB.Core.ChangesResponseChange<{}>) => void,
   ) {
-    this.db
+    const changeListener = this.db
       .changes({
         since: "now",
         live: true,
@@ -135,6 +135,10 @@ export class Collection {
         };
         callback(changeForClient);
       });
+
+    return () => {
+      changeListener.cancel();
+    };
   }
 
   share(docId: string, sharedTo: string[] | "public") {
