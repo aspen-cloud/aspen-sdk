@@ -32,7 +32,7 @@ aspen.login(); // Redirects user to authentication page and returns with token
 2. Save data to the user's database
 
 ```javascript
-const notes = aspen.collection("notes");
+const notes = aspen.currentUser().collection("notes");
 
 await notes.add({
   text: "I should buy a giftcards to my favorite restaurants",
@@ -51,7 +51,7 @@ const docForJane = {
   text: 'How about a stay-cation?'
   type: 'normal'
 }
-await aspen.sendDocTo(docFormJane, 'jane.doe');
+await aspen.currentUser().sendDocTo(docFormJane, 'jane.doe');
 ```
 
 4. Listen to new changes or received docs for user
@@ -60,7 +60,7 @@ await aspen.sendDocTo(docFormJane, 'jane.doe');
 /**
  * Here we take a message from another user and add it to a comment our note list.
  */
-aspen.inbox.subscribe(async (receivedDoc) => {
+aspen.currentUser().onNewMessage(async (receivedDoc) => {
   if (receivedDoc.type === "comment") {
     await aspen.collection("notes").upsert(receivedDoc.noteId, (note) => {
       return {
