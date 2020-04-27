@@ -149,6 +149,20 @@ export class Collection {
       return { ...doc, sharing: sharedTo };
     });
   }
+
+  //TODO potentially move out of collection
+
+  query(
+    index: string,
+    options: {
+      include_docs?: boolean;
+      startkey?: any[];
+      endkey?: any[];
+      key: any[];
+    },
+  ) {
+    return this.db.query(index, options);
+  }
 }
 
 export class ExternalCollection {}

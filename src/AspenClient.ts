@@ -9,6 +9,7 @@ PouchDB.plugin(require("pouchdb-adapter-http"));
 import { API_URL } from "./config";
 import { Collection } from "./Collection";
 import Outbox from "./outbox";
+import Messages from "./Messages";
 
 export abstract class BaseClient {
   abstract isLoggedIn(): boolean;
@@ -199,11 +200,13 @@ export class AuthUserContext {
   private inbox: Collection;
   private outbox: Outbox;
   getInfo: () => Promise<any>;
+  messages: Messages;
   constructor({ db, outbox, getInfo }) {
     this.db = db;
     this.inbox = this.collection("_inbox");
     this.outbox = outbox;
     this.getInfo = getInfo;
+    this.messages = new Messages(outbox, this.collection("msg"));
   }
 
   /**
@@ -232,7 +235,7 @@ export class AuthUserContext {
    * @param username
    */
   async sendDocTo(doc: any, username: string) {
-    return this.outbox.post(username, doc);
+    return this.outbox.post({ to: username, body: doc });
   }
 }
 

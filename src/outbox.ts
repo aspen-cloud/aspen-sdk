@@ -19,7 +19,7 @@ export default class Outbox {
     this.handler = messageSender;
     this.handleSentMessages();
   }
-  post(to: string, body: any) {
+  post({ to, body }: { to: string; body: any }) {
     return this.db.post({
       to,
       body,

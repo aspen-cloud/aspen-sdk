@@ -4,8 +4,9 @@ const idMaker = docuri.route("/:collection/:id");
 export function createFullId(collection: string, id: string): string {
   return idMaker({ collection, id });
 }
-export function parseFullId(id: string) {
-  return idMaker(id);
+export function parseFullId(docId: string) {
+  const [, collection, ...id] = docId.split("/");
+  return { collection, id: id.join("/") };
 }
 export function updateDocForClient(
   doc: PouchDB.Core.Document<any>,
